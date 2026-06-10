@@ -78,9 +78,15 @@ async function createPostgresTestApp(): Promise<INestApplication<App>> {
   const { AppModule } = nodeRequire('../../../dist/app.module') as {
     AppModule: new () => unknown;
   };
+  const { DrizzleMigrationService } = nodeRequire(
+    '../../../dist/core/database/drizzle-migration.service',
+  ) as { DrizzleMigrationService: new () => unknown };
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  })
+    .overrideProvider(DrizzleMigrationService)
+    .useValue({ onModuleInit: (): Promise<void> => Promise.resolve() })
+    .compile();
   return initTestApplication(moduleFixture);
 }
 

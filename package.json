@@ -17,7 +17,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "nest build && tsx --test test/e2e/**/*.e2e.test.ts",
+    "test:e2e": "nest build && tsx --test --test-concurrency=1 test/e2e/**/*.e2e.test.ts",
     "arch:check": "depcruise src --config .dependency-cruiser.cjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
