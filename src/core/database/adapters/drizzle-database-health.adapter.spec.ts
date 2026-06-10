@@ -1,20 +1,12 @@
 import { DrizzleDatabaseHealthAdapter } from './drizzle-database-health.adapter';
 
 describe('DrizzleDatabaseHealthAdapter', () => {
-  it('should return false when drizzle client is not configured', async () => {
-    const adapter = new DrizzleDatabaseHealthAdapter(null);
-    const actualResult = await adapter.checkConnectivity();
-    expect(actualResult).toBe(false);
-  });
-
   it('should return true when select 1 succeeds', async () => {
     const mockDb = {
       execute: jest.fn().mockResolvedValue(undefined),
     };
     const adapter = new DrizzleDatabaseHealthAdapter(
-      mockDb as unknown as ConstructorParameters<
-        typeof DrizzleDatabaseHealthAdapter
-      >[0],
+      mockDb as ConstructorParameters<typeof DrizzleDatabaseHealthAdapter>[0],
     );
     const actualResult = await adapter.checkConnectivity();
     expect(actualResult).toBe(true);
@@ -26,9 +18,7 @@ describe('DrizzleDatabaseHealthAdapter', () => {
       execute: jest.fn().mockRejectedValue(new Error('connection refused')),
     };
     const adapter = new DrizzleDatabaseHealthAdapter(
-      mockDb as unknown as ConstructorParameters<
-        typeof DrizzleDatabaseHealthAdapter
-      >[0],
+      mockDb as ConstructorParameters<typeof DrizzleDatabaseHealthAdapter>[0],
     );
     const actualResult = await adapter.checkConnectivity();
     expect(actualResult).toBe(false);

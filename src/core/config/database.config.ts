@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
-const DEFAULT_DATABASE_URL = 'sqlite://./data/app.db';
+const DEFAULT_DATABASE_URL =
+  'postgresql://postgres:postgres@localhost:5432/app';
 
 export interface DatabaseConfig {
   readonly url: string;

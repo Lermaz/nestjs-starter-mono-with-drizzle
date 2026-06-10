@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { DRIZZLE_DB, DrizzleDb } from '../drizzle.provider';
+import { DRIZZLE_DB } from '../drizzle.provider';
+import type { DrizzleDb } from '../drizzle.provider';
 import { DatabaseHealthPort } from '../ports/database-health.port';
 
 /**
@@ -8,12 +9,9 @@ import { DatabaseHealthPort } from '../ports/database-health.port';
  */
 @Injectable()
 export class DrizzleDatabaseHealthAdapter implements DatabaseHealthPort {
-  constructor(@Inject(DRIZZLE_DB) private readonly db: DrizzleDb | null) {}
+  constructor(@Inject(DRIZZLE_DB) private readonly db: DrizzleDb) {}
 
   async checkConnectivity(): Promise<boolean> {
-    if (!this.db) {
-      return false;
-    }
     try {
       await this.db.execute(sql`select 1`);
       return true;

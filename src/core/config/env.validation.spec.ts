@@ -11,7 +11,7 @@ describe('validateEnvironment', () => {
       validateEnvironment({
         NODE_ENV: 'production',
         JWT_SECRET: 'change-me-in-production',
-        DATABASE_URL: 'sqlite://./data/app.db',
+        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/app',
       }),
     ).toThrow('JWT_SECRET must be set to a non-default value in production');
   });
@@ -29,7 +29,7 @@ describe('validateEnvironment', () => {
     const actualConfig = validateEnvironment({
       NODE_ENV: 'production',
       JWT_SECRET: 'secure-production-secret',
-      DATABASE_URL: 'sqlite://./data/app.db',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/app',
     });
     expect(actualConfig.JWT_SECRET).toBe('secure-production-secret');
   });
@@ -44,12 +44,12 @@ describe('validateEnvironment', () => {
     );
   });
 
-  it('should reject unsupported DATABASE_URL scheme', () => {
+  it('should reject sqlite DATABASE_URL', () => {
     expect(() =>
       validateEnvironment({
         NODE_ENV: 'development',
-        DATABASE_URL: 'mysql://localhost:3306/app',
+        DATABASE_URL: 'sqlite://./data/app.db',
       }),
-    ).toThrow('DATABASE_URL must use sqlite:// or postgresql:// scheme');
+    ).toThrow('DATABASE_URL must use postgresql:// scheme');
   });
 });

@@ -11,9 +11,9 @@ module.exports = {
     {
       name: 'domain-no-orm',
       severity: 'error',
-      comment: 'Domain layer must not depend on MikroORM',
+      comment: 'Domain layer must not depend on ORM packages',
       from: { path: '^src/modules/[^/]+/domain/' },
-      to: { path: '^node_modules/@mikro-orm' },
+      to: { path: '^node_modules/(drizzle-orm|@mikro-orm)' },
     },
     {
       name: 'app-no-presentation',
