@@ -13,7 +13,7 @@ module.exports = {
       severity: 'error',
       comment: 'Domain layer must not depend on ORM packages',
       from: { path: '^src/modules/[^/]+/domain/' },
-      to: { path: '^node_modules/(drizzle-orm|@mikro-orm)' },
+      to: { path: '^node_modules/drizzle-orm' },
     },
     {
       name: 'app-no-presentation',
@@ -23,11 +23,14 @@ module.exports = {
       to: { path: '^src/modules/$1/presentation/' },
     },
     {
-      name: 'app-no-infra-entities',
+      name: 'app-no-infra-persistence',
       severity: 'error',
-      comment: 'Application layer must not import persistence entities',
+      comment:
+        'Application layer must not import persistence schemas or repositories',
       from: { path: '^src/modules/([^/]+)/application/' },
-      to: { path: '^src/modules/$1/infrastructure/entities/' },
+      to: {
+        path: '^src/modules/$1/infrastructure/(entities|schema|repositories)/',
+      },
     },
     {
       name: 'common-cross-module-public-only',
