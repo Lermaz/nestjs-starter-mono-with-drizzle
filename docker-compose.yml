@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: sqlite://./data/app.db
+    volumes:
+      - ./data:/app/data

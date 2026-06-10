@@ -1,0 +1,9 @@
+# Module-level ownership — extend as team and module count grow
+
+/src/core/                    @Lermaz
+/src/common/                  @Lermaz
+/src/modules/auth/            @Lermaz
+/src/modules/todos/           @Lermaz
+/src/modules/health/          @Lermaz
+/docs/                        @Lermaz
+/.github/                     @Lermaz
