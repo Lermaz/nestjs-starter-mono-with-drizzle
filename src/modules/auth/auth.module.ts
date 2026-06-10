@@ -1,4 +1,3 @@
-import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -6,9 +5,8 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthConfig } from '../../core/config/auth.config';
 import { AuthService } from './application/auth.service';
 import { USER_REPOSITORY } from './application/ports/user.repository.port';
-import { UserEntity } from './infrastructure/entities/user.entity';
-import { MikroUserRepository } from './infrastructure/repositories/mikro-user.repository';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
+import { DrizzleUserRepository } from './infrastructure/repositories/drizzle-user.repository';
 import { AuthPublicApi } from './public/auth-public.api';
 import { AuthController } from './presentation/auth.controller';
 
@@ -18,7 +16,6 @@ import { AuthController } from './presentation/auth.controller';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    MikroOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -47,7 +44,7 @@ import { AuthController } from './presentation/auth.controller';
     JwtStrategy,
     {
       provide: USER_REPOSITORY,
-      useClass: MikroUserRepository,
+      useClass: DrizzleUserRepository,
     },
   ],
   exports: [AuthPublicApi],

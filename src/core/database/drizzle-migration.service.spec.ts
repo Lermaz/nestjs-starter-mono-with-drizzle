@@ -15,13 +15,7 @@ describe('DrizzleMigrationService', () => {
     jest.clearAllMocks();
   });
 
-  it('should skip migrations when drizzle client is not configured', async () => {
-    const service = new DrizzleMigrationService(null);
-    await service.onModuleInit();
-    expect(migrate).not.toHaveBeenCalled();
-  });
-
-  it('should run migrations when drizzle client is configured', async () => {
+  it('should run migrations on module init', async () => {
     const mockDb = {};
     const service = new DrizzleMigrationService(
       mockDb as ConstructorParameters<typeof DrizzleMigrationService>[0],

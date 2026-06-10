@@ -19,15 +19,15 @@ services:
     build: .
     ports:
       - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       PORT: 3000
       NODE_ENV: production
-      # SQLite until Phase 4 swaps repositories to Drizzle; use postgres URL for Drizzle runtime
-      DATABASE_URL: sqlite://./data/app.db
-    volumes:
-      - ./data:/app/data
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app
 
 volumes:
   pgdata:
