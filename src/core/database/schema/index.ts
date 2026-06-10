@@ -1,5 +1,2 @@
-/**
- * Barrel export for module-owned Drizzle schemas.
- * Populated in Phase 2 of the MikroORM → Drizzle migration.
- */
-export {};
+export * from '../../../modules/auth/infrastructure/schema/users.schema';
+export * from '../../../modules/todos/infrastructure/schema/todos.schema';

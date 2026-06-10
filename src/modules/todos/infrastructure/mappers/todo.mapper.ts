@@ -1,25 +1,32 @@
 import { CreateTodoProps, Todo } from '../../domain/todo.model';
-import { TodoEntity } from '../entities/todo.entity';
+import { TodoRow } from '../schema/todos.schema';
+
+export interface NewTodoPersistence {
+  readonly userId: string;
+  readonly title: string;
+  readonly isCompleted: boolean;
+  readonly createdAt: Date;
+}
 
 /**
- * Maps a persistence entity to a domain todo.
+ * Maps a persistence row to a domain todo.
  */
-export function toDomainTodo(entity: TodoEntity): Todo {
+export function toDomainTodo(row: TodoRow): Todo {
   return {
-    id: entity.id,
-    title: entity.title,
-    isCompleted: entity.isCompleted,
-    createdAt: entity.createdAt,
+    id: row.id,
+    title: row.title,
+    isCompleted: row.isCompleted,
+    createdAt: row.createdAt,
   };
 }
 
 /**
- * Maps domain todo properties to a new persistence entity shape.
+ * Maps domain todo properties to a new persistence row shape.
  */
 export function toNewTodoEntity(
   userId: string,
   props: CreateTodoProps,
-): Pick<TodoEntity, 'userId' | 'title' | 'isCompleted' | 'createdAt'> {
+): NewTodoPersistence {
   return {
     userId,
     title: props.title,

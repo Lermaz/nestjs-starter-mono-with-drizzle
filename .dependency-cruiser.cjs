@@ -58,6 +58,7 @@ module.exports = {
         pathNot: [
           '^src/modules/$1',
           '^src/modules/[^/]+/public/',
+          '^src/modules/[^/]+/infrastructure/schema/',
           '\\.module\\.ts$',
         ],
       },
