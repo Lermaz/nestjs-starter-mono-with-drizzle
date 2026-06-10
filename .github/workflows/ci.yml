@@ -7,6 +7,26 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app
+      JWT_SECRET: ci-test-secret
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,5 +51,7 @@ jobs:
         run: pnpm run build
       - name: Architecture check
         run: pnpm run arch:check
+      - name: Apply database migrations
+        run: pnpm db:migrate
       - name: E2E tests
         run: pnpm run test:e2e
