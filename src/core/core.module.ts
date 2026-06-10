@@ -1,4 +1,3 @@
-import { MikroOrmMiddleware } from '@mikro-orm/nestjs';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -68,6 +67,6 @@ import { DatabaseModule } from './database/database.module';
 })
 export class CoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(MikroOrmMiddleware, RequestIdMiddleware).forRoutes('*');
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
   }
 }
