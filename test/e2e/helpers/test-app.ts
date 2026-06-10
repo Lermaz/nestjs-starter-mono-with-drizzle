@@ -32,20 +32,61 @@ export interface AuthResponseBody {
 }
 
 const nodeRequire = createRequire(import.meta.url);
-const E2E_DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/app';
+const LOCAL_POSTGRES_URL = 'postgresql://postgres:postgres@localhost:5432/app';
 
 type E2eDrizzleDb = ReturnType<typeof drizzle>;
 
 let pgliteClient: PGlite | undefined;
-let e2eDatabase: E2eDrizzleDb | undefined;
+let pgliteDatabase: E2eDrizzleDb | undefined;
 
 /**
  * Creates a Nest application for end-to-end tests.
  */
 export async function createTestApp(): Promise<INestApplication<App>> {
-  process.env.DATABASE_URL = E2E_DATABASE_URL;
   process.env.JWT_SECRET = 'e2e-test-secret';
-  const database = await ensureE2eDatabase();
+  const app = shouldUseCiPostgres()
+    ? await createPostgresTestApp()
+    : await createPgliteTestApp();
+  await resetDatabase(app);
+  return app;
+}
+
+/**
+ * Registers and logs in a user, returning a JWT access token.
+ */
+export async function registerAndLogin(
+  app: INestApplication<App>,
+  email: string,
+): Promise<string> {
+  const password = 'password123';
+  await request(app.getHttpServer())
+    .post('/auth/register')
+    .send({ email, password });
+  const loginResponse = await request(app.getHttpServer())
+    .post('/auth/login')
+    .send({ email, password });
+  const authBody = loginResponse.body as AuthResponseBody;
+  return authBody.accessToken;
+}
+
+function shouldUseCiPostgres(): boolean {
+  return process.env.CI === 'true' || Boolean(process.env.E2E_DATABASE_URL);
+}
+
+async function createPostgresTestApp(): Promise<INestApplication<App>> {
+  process.env.DATABASE_URL = process.env.E2E_DATABASE_URL ?? LOCAL_POSTGRES_URL;
+  const { AppModule } = nodeRequire('../../../dist/app.module') as {
+    AppModule: new () => unknown;
+  };
+  const moduleFixture: TestingModule = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile();
+  return initTestApplication(moduleFixture);
+}
+
+async function createPgliteTestApp(): Promise<INestApplication<App>> {
+  process.env.DATABASE_URL = LOCAL_POSTGRES_URL;
+  const database = await ensurePgliteDatabase();
   const { AppModule } = nodeRequire('../../../dist/app.module') as {
     AppModule: new () => unknown;
   };
@@ -68,6 +109,12 @@ export async function createTestApp(): Promise<INestApplication<App>> {
     .overrideProvider(DrizzleMigrationService)
     .useValue({ onModuleInit: (): Promise<void> => Promise.resolve() })
     .compile();
+  return initTestApplication(moduleFixture);
+}
+
+async function initTestApplication(
+  moduleFixture: TestingModule,
+): Promise<INestApplication<App>> {
   const { configureHttpSecurity } = nodeRequire(
     '../../../dist/core/http/configure-http',
   ) as {
@@ -91,43 +138,34 @@ export async function createTestApp(): Promise<INestApplication<App>> {
     }),
   );
   await app.init();
-  await resetDatabase(database);
   return app;
 }
 
-/**
- * Registers and logs in a user, returning a JWT access token.
- */
-export async function registerAndLogin(
-  app: INestApplication<App>,
-  email: string,
-): Promise<string> {
-  const password = 'password123';
-  await request(app.getHttpServer())
-    .post('/auth/register')
-    .send({ email, password });
-  const loginResponse = await request(app.getHttpServer())
-    .post('/auth/login')
-    .send({ email, password });
-  const authBody = loginResponse.body as AuthResponseBody;
-  return authBody.accessToken;
-}
-
-async function ensureE2eDatabase(): Promise<E2eDrizzleDb> {
-  if (e2eDatabase) {
-    return e2eDatabase;
+async function ensurePgliteDatabase(): Promise<E2eDrizzleDb> {
+  if (pgliteDatabase) {
+    return pgliteDatabase;
   }
   const schema = nodeRequire(
     '../../../dist/core/database/schema/index',
   ) as Record<string, unknown>;
   pgliteClient = new PGlite();
-  e2eDatabase = drizzle({ client: pgliteClient, schema, casing: 'snake_case' });
-  await migrate(e2eDatabase, {
+  pgliteDatabase = drizzle({
+    client: pgliteClient,
+    schema,
+    casing: 'snake_case',
+  });
+  await migrate(pgliteDatabase, {
     migrationsFolder: join(process.cwd(), 'drizzle'),
   });
-  return e2eDatabase;
+  return pgliteDatabase;
 }
 
-async function resetDatabase(database: E2eDrizzleDb): Promise<void> {
-  await database.execute(sql`truncate table todos, users cascade`);
+async function resetDatabase(app: INestApplication<App>): Promise<void> {
+  const { DRIZZLE_DB } = nodeRequire(
+    '../../../dist/core/database/drizzle.provider',
+  ) as { DRIZZLE_DB: symbol };
+  const db = app.get<{
+    execute: (query: ReturnType<typeof sql>) => Promise<unknown>;
+  }>(DRIZZLE_DB);
+  await db.execute(sql`truncate table todos, users cascade`);
 }
