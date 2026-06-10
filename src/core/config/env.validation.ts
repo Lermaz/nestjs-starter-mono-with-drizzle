@@ -1,5 +1,7 @@
 const DEFAULT_JWT_SECRET = 'change-me-in-production';
 const PRODUCTION_NODE_ENV = 'production';
+const SQLITE_URL_PREFIX = 'sqlite://';
+const POSTGRESQL_URL_PREFIX = 'postgresql://';
 
 interface EnvironmentInput {
   readonly NODE_ENV?: string;
@@ -25,6 +27,13 @@ export function validateEnvironment(
     if (databaseUrl.length === 0) {
       throw new Error('DATABASE_URL must be set in production');
     }
+  }
+  if (
+    databaseUrl.length > 0 &&
+    !databaseUrl.startsWith(SQLITE_URL_PREFIX) &&
+    !databaseUrl.startsWith(POSTGRESQL_URL_PREFIX)
+  ) {
+    throw new Error('DATABASE_URL must use sqlite:// or postgresql:// scheme');
   }
   if (nodeEnv !== PRODUCTION_NODE_ENV && jwtSecret.length === 0) {
     return { ...config, JWT_SECRET: DEFAULT_JWT_SECRET };

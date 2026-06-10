@@ -33,4 +33,23 @@ describe('validateEnvironment', () => {
     });
     expect(actualConfig.JWT_SECRET).toBe('secure-production-secret');
   });
+
+  it('should accept postgresql DATABASE_URL', () => {
+    const actualConfig = validateEnvironment({
+      NODE_ENV: 'development',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/app',
+    });
+    expect(actualConfig.DATABASE_URL).toBe(
+      'postgresql://postgres:postgres@localhost:5432/app',
+    );
+  });
+
+  it('should reject unsupported DATABASE_URL scheme', () => {
+    expect(() =>
+      validateEnvironment({
+        NODE_ENV: 'development',
+        DATABASE_URL: 'mysql://localhost:3306/app',
+      }),
+    ).toThrow('DATABASE_URL must use sqlite:// or postgresql:// scheme');
+  });
 });

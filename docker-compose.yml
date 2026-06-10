@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d app']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: .
     ports:
@@ -8,6 +24,10 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
+      # Still SQLite until Drizzle replaces MikroORM (Phase 3+)
       DATABASE_URL: sqlite://./data/app.db
     volumes:
       - ./data:/app/data
+
+volumes:
+  pgdata:
