@@ -171,7 +171,7 @@ docker run -p 3000:3000 --env-file .env nestjs-starter-mono
 | `pnpm build`      | Compile TypeScript                |
 | `pnpm lint`       | ESLint                            |
 | `pnpm test`       | Unit tests (Jest)                 |
-| `pnpm test:e2e`   | End-to-end tests (in-process PGlite) |
+| `pnpm test:e2e`   | End-to-end tests (PGlite locally; Postgres in CI) |
 | `pnpm test:cov`   | Coverage report                   |
 | `pnpm arch:check` | dependency-cruiser boundary rules |
 | `pnpm db:generate`| Generate SQL migration from schema |
@@ -183,12 +183,14 @@ docker run -p 3000:3000 --env-file .env nestjs-starter-mono
 
 On every push and PR (`.github/workflows/ci.yml`):
 
-1. `pnpm audit --audit-level high`
-2. `pnpm lint`
-3. `pnpm test`
-4. `pnpm build`
-5. `pnpm arch:check`
-6. `pnpm test:e2e`
+1. Start `postgres:16-alpine` service container
+2. `pnpm audit --audit-level high`
+3. `pnpm lint`
+4. `pnpm test`
+5. `pnpm build`
+6. `pnpm arch:check`
+7. `pnpm db:migrate`
+8. `pnpm test:e2e` (real PostgreSQL when `CI=true`; PGlite locally)
 
 ## Database migrations
 

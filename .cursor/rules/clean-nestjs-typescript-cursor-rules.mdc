@@ -105,9 +105,10 @@ Generate code, corrections, and refactorings that comply with the basic principl
     - A models folder with data types.
       - DTOs validated with class-validator for inputs.
       - Declare simple types for outputs.
-    - A services module with business logic and persistence.
-      - Entities with MikroORM for data persistence.
-      - One service per entity.
+    - An application layer with business logic and repository ports.
+    - An infrastructure layer with Drizzle `pgTable` schemas, repository adapters, and mappers.
+      - One repository adapter per aggregate table.
+      - Schema files live in `infrastructure/schema/` per feature module.
   
   - Common Module: Create a common module (e.g., @app/common) for shared, reusable code across the application.
     - This module should include:

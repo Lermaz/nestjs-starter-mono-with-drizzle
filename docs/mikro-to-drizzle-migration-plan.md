@@ -14,8 +14,8 @@ Migration plan for replacing **MikroORM 7 (SQLite)** with **Drizzle ORM + Postgr
 | 3 | `DatabaseModule` Drizzle provider, boot migrations, health adapter |
 | 4 | `DrizzleUserRepository` / `DrizzleTodoRepository`; MikroORM removed |
 | 5 | Versioned SQL in `drizzle/`; `pnpm db:generate` / `db:migrate` workflow |
-| 6 | All `@mikro-orm/*` packages and artifacts deleted |
-| 7 | E2e uses in-process PGlite; CI unchanged (no Docker required in CI) |
+| 6 | All `@mikro-orm/*` packages and artifacts deleted; Cursor rules updated |
+| 7 | E2e: PGlite locally, real Postgres in CI via service container + `db:migrate` |
 
 **Runtime:** PostgreSQL only (`DATABASE_URL=postgresql://...`). E2e tests override Drizzle with PGlite.
 
@@ -581,12 +581,12 @@ pnpm db:migrate
 
 Execute only after all tests pass with Drizzle.
 
-- [ ] Uninstall all `@mikro-orm/*` packages
-- [ ] Delete Mikro config and migration files
-- [ ] Remove `MikroOrmMiddleware` import from `core.module.ts`
-- [ ] Update `.dependency-cruiser.cjs` rule `domain-no-orm` to forbid `drizzle-orm` in domain (replace `@mikro-orm` path)
-- [ ] Update `docs/module-ownership.md`, module READMEs, root `README.md`
-- [ ] Update Cursor rules if they still say "MikroORM"
+- [x] Uninstall all `@mikro-orm/*` packages
+- [x] Delete Mikro config and migration files
+- [x] Remove `MikroOrmMiddleware` import from `core.module.ts`
+- [x] Update `.dependency-cruiser.cjs` rule `domain-no-orm` to forbid `drizzle-orm` in domain
+- [x] Update `docs/module-ownership.md`, module READMEs, root `README.md`
+- [x] Update Cursor rules for Drizzle schemas and repository adapters
 
 ---
 
@@ -613,11 +613,11 @@ Update `test/e2e/helpers/test-app.ts` accordingly.
 
 ### 7.3 CI pipeline
 
-1. Service container: `postgres:16-alpine`
-2. `DATABASE_URL=postgresql://...`
-3. `pnpm build`
-4. `pnpm db:migrate` (or rely on boot migration)
-5. `pnpm test` + `pnpm test:e2e`
+- [x] Service container: `postgres:16-alpine`
+- [x] `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app`
+- [x] `pnpm build` before e2e
+- [x] `pnpm db:migrate` before e2e
+- [x] `pnpm test` + `pnpm test:e2e` (e2e uses real Postgres when `CI=true`)
 
 ---
 
