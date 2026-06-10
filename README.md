@@ -1,6 +1,6 @@
 # nestjs-starter-mono
 
-A production-oriented **NestJS modular monolith** starter with enforced module boundaries, JWT auth, user-scoped todos, MikroORM migrations, and security hardening out of the box.
+A production-oriented **NestJS modular monolith** starter with enforced module boundaries, JWT auth, user-scoped todos, Drizzle ORM + PostgreSQL, and security hardening out of the box.
 
 Built as a reference implementation for clean architecture in a single deployable: domain-driven feature modules, repository ports, public facades for cross-module access, and automated architecture checks in CI.
 
@@ -10,7 +10,7 @@ Built as a reference implementation for clean architecture in a single deployabl
 | ---------- | ------------------------------------------------ |
 | Runtime    | Node.js 22, TypeScript 5                         |
 | Framework  | NestJS 11                                        |
-| ORM        | MikroORM 7 (SQLite)                              |
+| ORM        | Drizzle ORM + PostgreSQL (`pg`)                  |
 | Auth       | JWT (Passport), bcrypt                           |
 | Validation | class-validator, class-transformer               |
 | API docs   | Swagger (dev / opt-in prod)                      |
@@ -33,21 +33,22 @@ Each feature module follows:
 modules/<feature>/
   domain/           # pure TypeScript — models, rules, factories
   application/      # services, ports, events
-  infrastructure/   # entities, repositories, listeners
+  infrastructure/   # drizzle schemas, repositories, listeners
   presentation/     # controllers, DTOs, mappers
   public/           # cross-module facade + exported types
 ```
 
 **Boundary rules** (enforced by `pnpm arch:check`):
 
-- Domain layer cannot import NestJS or MikroORM
-- Application layer cannot import presentation DTOs or ORM entities
+- Domain layer cannot import NestJS or Drizzle ORM
+- Application layer cannot import presentation DTOs or persistence schemas
 - Cross-module imports go through `public/` barrels only
 
 Further reading:
 
 - [Module ownership](docs/module-ownership.md)
 - [Scale path](docs/scale-path.md)
+- [MikroORM → Drizzle migration plan](docs/mikro-to-drizzle-migration-plan.md) (completed)
 
 ## API overview
 
@@ -112,6 +113,7 @@ All errors return a consistent JSON body:
 
 - Node.js 22+
 - pnpm 9+
+- PostgreSQL 16+ (local install or Docker)
 
 ### Local development
 
@@ -119,7 +121,11 @@ All errors return a consistent JSON body:
 cp .env.example .env
 # Set JWT_SECRET (any non-empty value is fine for local dev)
 
+# Start Postgres (Docker)
+docker compose up postgres -d
+
 pnpm install
+pnpm db:migrate    # first time only — also runs on app boot
 pnpm start:dev
 ```
 
@@ -131,7 +137,7 @@ pnpm start:dev
 | Variable         | Required (prod) | Description                                      |
 | ---------------- | --------------- | ------------------------------------------------ |
 | `JWT_SECRET`     | Yes             | Signing key; must not be the default placeholder |
-| `DATABASE_URL`   | Yes             | SQLite path, e.g. `sqlite://./data/app.db`       |
+| `DATABASE_URL`   | Yes             | PostgreSQL URL, e.g. `postgresql://postgres:postgres@localhost:5432/app` |
 | `NODE_ENV`       | No              | `development` (default) or `production`          |
 | `PORT`           | No              | HTTP port (default `3000`)                       |
 | `CORS_ORIGINS`   | No              | Comma-separated allowed origins                  |
@@ -148,7 +154,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-SQLite data persists in `./data`. The compose file loads secrets from `.env` (not committed).
+The `api` service waits for `postgres` to be healthy. Drizzle SQL migrations in `drizzle/` are copied into the image and applied on boot.
 
 ```bash
 # Manual image build
@@ -158,19 +164,20 @@ docker run -p 3000:3000 --env-file .env nestjs-starter-mono
 
 ## Scripts
 
-| Command                 | Description                       |
-| ----------------------- | --------------------------------- |
-| `pnpm start:dev`        | Dev server with watch             |
-| `pnpm start:prod`       | Run compiled `dist/main.js`       |
-| `pnpm build`            | Compile TypeScript                |
-| `pnpm lint`             | ESLint                            |
-| `pnpm test`             | Unit tests (Jest)                 |
-| `pnpm test:e2e`         | End-to-end tests                  |
-| `pnpm test:cov`         | Coverage report                   |
-| `pnpm arch:check`       | dependency-cruiser boundary rules |
-| `pnpm migration:create` | Generate MikroORM migration       |
-| `pnpm migration:up`     | Apply pending migrations          |
-| `pnpm migration:down`   | Revert last migration             |
+| Command           | Description                       |
+| ----------------- | --------------------------------- |
+| `pnpm start:dev`  | Dev server with watch             |
+| `pnpm start:prod` | Run compiled `dist/main.js`       |
+| `pnpm build`      | Compile TypeScript                |
+| `pnpm lint`       | ESLint                            |
+| `pnpm test`       | Unit tests (Jest)                 |
+| `pnpm test:e2e`   | End-to-end tests (in-process PGlite) |
+| `pnpm test:cov`   | Coverage report                   |
+| `pnpm arch:check` | dependency-cruiser boundary rules |
+| `pnpm db:generate`| Generate SQL migration from schema |
+| `pnpm db:migrate` | Apply pending Drizzle migrations  |
+| `pnpm db:push`    | Push schema directly (dev only)   |
+| `pnpm db:studio`  | Open Drizzle Studio               |
 
 ## CI pipeline
 
@@ -185,15 +192,15 @@ On every push and PR (`.github/workflows/ci.yml`):
 
 ## Database migrations
 
-Migrations run automatically on application startup via `DatabaseMigrationService`.
+Drizzle Kit manages versioned SQL in `drizzle/`. Migrations also run automatically on application startup via `DrizzleMigrationService`.
 
 ```bash
-# After entity/schema changes
-pnpm migration:create
-pnpm migration:up
+# After schema changes in src/modules/*/infrastructure/schema/
+pnpm db:generate
+pnpm db:migrate
 ```
 
-Migration files live in `src/migrations/` and are copied to `dist/migrations/` on build.
+Configuration: `drizzle.config.ts` (schema barrel at `src/core/database/schema/index.ts`).
 
 ## Project layout
 
@@ -207,19 +214,20 @@ src/
     auth/
     health/
     todos/
-  migrations/
+drizzle/                # generated SQL migrations
 test/
-  e2e/                  # API integration tests
+  e2e/                  # API integration tests (PGlite)
 docs/                   # architecture guides
 ```
 
 ## Adding a feature module
 
 1. Create `src/modules/<feature>/` with `domain`, `application`, `infrastructure`, `presentation`, `public`
-2. Export only facades/types from `public/index.ts`
-3. Wire the module in `AppModule`
-4. Add a module `README.md` and a CODEOWNERS entry
-5. Add unit + e2e tests; ensure `pnpm arch:check` passes
+2. Add `infrastructure/schema/<feature>.schema.ts` and export from `src/core/database/schema/index.ts`
+3. Export only facades/types from `public/index.ts`
+4. Wire the module in `AppModule`
+5. Add a module `README.md` and a CODEOWNERS entry
+6. Add unit + e2e tests; ensure `pnpm arch:check` passes
 
 See [module ownership](docs/module-ownership.md) for conventions.
 

@@ -2,8 +2,22 @@
 
 Migration plan for replacing **MikroORM 7 (SQLite)** with **Drizzle ORM + PostgreSQL** in this NestJS modular monolith, while preserving the existing hexagonal architecture (domain ports, infrastructure adapters, module ownership).
 
-**Status:** Planning  
+**Status:** Completed (2026-06-10)  
 **Target stack:** `drizzle-orm`, `drizzle-kit`, `pg` (node-postgres), PostgreSQL 16+
+
+## Completion summary
+
+| Phase | Outcome |
+|-------|---------|
+| 1 | Drizzle deps, `drizzle.config.ts`, Postgres in Docker Compose |
+| 2 | Module-owned `pgTable` schemas + initial `drizzle/` SQL migration |
+| 3 | `DatabaseModule` Drizzle provider, boot migrations, health adapter |
+| 4 | `DrizzleUserRepository` / `DrizzleTodoRepository`; MikroORM removed |
+| 5 | Versioned SQL in `drizzle/`; `pnpm db:generate` / `db:migrate` workflow |
+| 6 | All `@mikro-orm/*` packages and artifacts deleted |
+| 7 | E2e uses in-process PGlite; CI unchanged (no Docker required in CI) |
+
+**Runtime:** PostgreSQL only (`DATABASE_URL=postgresql://...`). E2e tests override Drizzle with PGlite.
 
 ---
 

@@ -26,6 +26,6 @@ Rate-limited to 5 requests per minute.
 
 - `domain/` — `User` model, registration rules
 - `application/` — `AuthService`, repository port
-- `infrastructure/` — `UserEntity`, MikroORM repository, mappers
+- `infrastructure/` — `users.schema.ts`, Drizzle repository, mappers
 - `presentation/` — controller, DTOs
 - `infrastructure/auth/` — Passport JWT strategy

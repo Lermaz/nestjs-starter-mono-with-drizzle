@@ -27,5 +27,5 @@ Import from: `src/modules/todos/public` (barrel)
 
 - `domain/` — pure TS todo models and validation
 - `application/` — `TodosService`, repository port, integration events
-- `infrastructure/` — `TodoEntity`, MikroORM repository, mappers
+- `infrastructure/` — `todos.schema.ts`, Drizzle repository, mappers
 - `presentation/` — controller, DTOs, response mappers

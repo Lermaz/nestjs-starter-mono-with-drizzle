@@ -5,7 +5,7 @@ One sentence per module — what it owns and what it does not own.
 | Module | Owns |
 |--------|------|
 | **CoreModule** | App-wide config, global filters/interceptors, and platform wiring |
-| **DatabaseModule** | MikroORM connection, migrations on boot, and `DatabaseHealthPort` |
+| **DatabaseModule** | Drizzle PostgreSQL connection, migrations on boot, and `DatabaseHealthPort` |
 | **CommonModule** | Shared cross-cutting providers (filters, interceptors, event listeners) consumed by Core |
 | **HealthModule** | Liveness/readiness HTTP endpoints and operational smoke checks |
 | **AuthModule** | User registration/login, JWT issuance, `AuthPublicApi`, and the `users` table |
@@ -21,18 +21,18 @@ One sentence per module — what it owns and what it does not own.
 
 - Cross-module calls go through a module's `public/` facade exported via `exports`.
 - Feature modules never import another module's `infrastructure/` or `presentation/` layers.
-- Each entity file lives inside its owning feature module; entities are never shared across modules.
+- Each Drizzle schema file lives inside its owning feature module; schemas are never shared across modules at runtime.
 
 ## Domain layer conventions
 
-- `domain/` is pure TypeScript — no NestJS, no MikroORM, no HTTP DTOs.
-- Repository ports speak domain types (`Todo`, `User`); entity mapping lives in `infrastructure/mappers/`.
+- `domain/` is pure TypeScript — no NestJS, no Drizzle ORM, no HTTP DTOs.
+- Repository ports speak domain types (`Todo`, `User`); row mapping lives in `infrastructure/mappers/`.
 - DTO mapping stays in `presentation/` (controllers and response mappers).
 - Application services orchestrate domain rules, ports, and integration events.
 - `use-cases/` splits are deferred until a service exceeds ~150 lines.
 
-## Database entities
+## Database schemas
 
-MikroORM discovers entities via a global glob at boot (`./dist/**/*.entity.js`), but ownership is per feature module. `TodoEntity` belongs to TodosModule only — other modules must use `TodosPublicApi` (or future facades), never import `*.entity.ts` files directly.
+Module-owned `pgTable` definitions live in `infrastructure/schema/*.schema.ts`. The core barrel at `src/core/database/schema/index.ts` re-exports them for Drizzle Kit only. `todos` may reference `users` for FK definitions — that is schema-level coupling only. Other modules must use public facades (`TodosPublicApi`, `AuthPublicApi`), never import another module's schema or repository files.
 
-See [modular-nestjs-roadmap.md](./modular-nestjs-roadmap.md) for the full architecture roadmap.
+See [scale path](./scale-path.md) for evolution beyond the modular monolith.
