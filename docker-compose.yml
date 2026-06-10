@@ -24,7 +24,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      # Still SQLite until Drizzle replaces MikroORM (Phase 3+)
+      # SQLite until Phase 4 swaps repositories to Drizzle; use postgres URL for Drizzle runtime
       DATABASE_URL: sqlite://./data/app.db
     volumes:
       - ./data:/app/data
